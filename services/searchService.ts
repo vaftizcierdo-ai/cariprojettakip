@@ -7,7 +7,7 @@ async function searchCollection(
     searchFields: string[],
     query: string,
     limit: number = 5
-) {
+): Promise<any[]> {
     try {
         const snapshot = await firestore.collection(collectionName).get();
         const lowerQuery = query.toLowerCase();
