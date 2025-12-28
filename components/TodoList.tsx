@@ -195,8 +195,7 @@ export default function TodoList() {
                             border: '1px solid rgba(255, 255, 255, 0.05)',
                             borderRadius: '0.75rem',
                             transition: 'all 0.2s ease',
-                            opacity: todo.completed ? 0.6 : 1,
-                            group: 'group' // Mock group for hover handling if needed via CSS, simplified here
+                            opacity: todo.completed ? 0.6 : 1
                         }}
                     >
                         <div
