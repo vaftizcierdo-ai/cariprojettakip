@@ -17,8 +17,15 @@ import {
 import { tr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Project } from '@prisma/client';
 import Link from 'next/link';
+
+interface Project {
+    id: string | number;
+    description?: string | null;
+    startDate: string | Date;
+    endDate: string | Date;
+    status: string;
+}
 
 interface CalendarViewProps {
     projects: Project[];
