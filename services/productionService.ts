@@ -1,4 +1,5 @@
 import { admin } from '@/utils/firebaseAdmin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 const firestore = admin.firestore();
 
@@ -12,7 +13,7 @@ export async function getProductionJobs(type?: string) {
 
         const snapshot = await query.orderBy('orderDate', 'desc').get();
 
-        const jobs = await Promise.all(snapshot.docs.map(async (doc) => {
+        const jobs = await Promise.all(snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
             const data = doc.data();
             let project = null;
 
