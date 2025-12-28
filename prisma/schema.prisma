@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id           Int       @id @default(autoincrement())
+  clientType   String    // 'Individual' | 'Company'
+  clientName   String?
+  companyName  String?
+  phone        String?
+  email        String?
+  country      String?
+  city         String?
+  district     String?
+  
+  description  String?
+  agreedPrice  Float     @default(0)
+  startDate    DateTime
+  endDate      DateTime
+  status       String    @default("Open") // Open, InProgress, Completed, Delayed
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  payments     Payment[]
+  services     ServiceRequest[]
+  production   ProductionJob[]
+  glassOrders  GlassOrder[]
+  logs         ProjectLog[]
+  expenses     Expense[]
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        String   // CreditCard, Cash, Check, Promissory, Goods
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model ServiceRequest {
+  id             Int       @id @default(autoincrement())
+  projectId      Int
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  complaintDate  DateTime
+  description    String
+  status         String    @default("Open") // Open, InProgress, Solved
+  resolutionNote String?
+  resolutionDate DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model ProductionJob {
+  id               Int      @id @default(autoincrement())
+  projectId        Int
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type             String   // Pergola, Guillotine, Sliding, Fixed, Special
+  description      String?
+  orderDate        DateTime
+  estimatedEndDate DateTime?
+  status           String   @default("Waiting") // Waiting, InProduction, Finished
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model GlassOrder {
+  id                    Int       @id @default(autoincrement())
+  projectId             Int
+  project               Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier              String
+  orderDate             DateTime
+  deliveryDate          DateTime?
+  items                 String?   // JSON string for dimensions/quantity (optional now)
+  description           String?
+  status                String    @default("Ordered") // Ordered, InProgress, Delivered
+  supplierOrderCode     String?   // Tedarikçi sipariş kodu
+  supplierDeliveryDate  DateTime? // Tedarikçi teslim tarihi
+  completed             Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model ProjectLog {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  amount      Float
+  category    String   // Material, Labor, Transport, Other
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+}
