@@ -34,5 +34,20 @@ export async function globalSearch(query: string) {
                     { project: { description: { contains: query } } },
                 ]
             },
-            return { projects, services, production, glass };
-        }
+            include: { project: true },
+            take: 5
+        }),
+        prisma.glassOrder.findMany({
+            where: {
+                OR: [
+                    { supplier: { contains: query } },
+                    { project: { description: { contains: query } } },
+                ]
+            },
+            include: { project: true },
+            take: 5
+        })
+    ]);
+
+    return { projects, services, production, glass };
+}
