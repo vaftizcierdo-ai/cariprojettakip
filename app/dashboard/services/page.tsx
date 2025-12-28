@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import ServiceFilters from '@/components/ServiceFilters';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
@@ -19,6 +19,14 @@ interface Service {
         clientName: string | null;
         companyName: string | null;
     };
+}
+
+function ServiceFiltersWrapper() {
+    return (
+        <Suspense fallback={<div style={{ padding: '1rem', color: '#6b6b80' }}>Filtreler yükleniyor...</div>}>
+            <ServiceFilters />
+        </Suspense>
+    );
 }
 
 export default function ServicesPage() {
@@ -125,7 +133,7 @@ export default function ServicesPage() {
             </div>
 
             {/* Filters */}
-            <ServiceFilters />
+            <ServiceFiltersWrapper />
 
             {/* Table Card */}
             <div style={{
