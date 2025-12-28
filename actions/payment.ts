@@ -1,11 +1,13 @@
 'use server';
 
-import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { admin } from '@/utils/firebaseAdmin';
+
+const firestore = admin.firestore();
 
 export async function addPayment(prevState: any, formData: FormData) {
-    const projectId = parseInt(formData.get('projectId') as string);
+    const projectId = String(formData.get('projectId') as string);
     const amount = parseFloat(formData.get('amount') as string);
     const date = formData.get('date') as string;
     const type = formData.get('type') as string;
@@ -16,20 +18,19 @@ export async function addPayment(prevState: any, formData: FormData) {
     }
 
     try {
-        await prisma.payment.create({
-            data: {
-                projectId,
-                amount,
-                date: new Date(date),
-                type,
-                description,
-            },
+        await firestore.collection('projects').doc(projectId).collection('payments').add({
+            amount,
+            date: admin.firestore.Timestamp.fromDate(new Date(date)),
+            type,
+            description: description || null,
+            createdAt: admin.firestore.Timestamp.now(),
         });
 
-        revalidatePath(`/projects/${projectId}`);
+        revalidatePath(`/dashboard/projects/${projectId}`);
     } catch (error) {
+        console.error('addPayment error', error);
         return { error: 'Ödeme eklenirken hata oluştu.' };
     }
 
-    redirect(`/projects/${projectId}`);
+    redirect(`/dashboard/projects/${projectId}`);
 }

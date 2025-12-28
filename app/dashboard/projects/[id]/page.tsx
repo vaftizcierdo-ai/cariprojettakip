@@ -8,13 +8,13 @@ import DeleteProjectButton from '@/components/DeleteProjectButton';
 
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const project = await getProjectById(parseInt(id));
+    const project = await getProjectById(id);
 
     if (!project) {
         notFound();
     }
 
-    const totalPaid = project.payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = (project.payments || []).reduce((sum, p: any) => sum + (Number(p?.amount) || 0), 0);
     const remaining = project.agreedPrice - totalPaid;
 
     const getStatusBadge = (status: string) => {
@@ -80,7 +80,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <DeleteProjectButton id={project.id} />
-                        <Link href={`/projects/${id}/edit`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/dashboard/projects/${id}/edit`} style={{ textDecoration: 'none' }}>
                             <button style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -99,7 +99,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                 Düzenle
                             </button>
                         </Link>
-                        <Link href={`/projects/${id}/log`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/dashboard/projects/${id}/log`} style={{ textDecoration: 'none' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -118,7 +118,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                 Gelişme Ekle
                             </div>
                         </Link>
-                        <Link href={`/projects/${id}/payment`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/dashboard/projects/${id}/payment`} style={{ textDecoration: 'none' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -137,7 +137,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                 Ödeme Ekle
                             </div>
                         </Link>
-                        <Link href={`/projects/${id}/expense`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/dashboard/projects/${id}/expense`} style={{ textDecoration: 'none' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -324,7 +324,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
                                         background: 'rgba(148, 163, 184, 0.3)',
                                         border: '2px solid #1e1e2e'
                                     }}></div>
-                                    <p style={{ fontSize: '0.875rem', color: '#e8e8f0', marginBottom: '0.25rem' }}>{log.content}</p>
+                                    <p style={{ fontSize: '0.875rem', color: '#e8e8f0', marginBottom: '0.25rem' }}>{(log as any)?.content || 'Notlandırma'}</p>
                                     <span style={{ fontSize: '0.75rem', color: '#6b6b80' }}>
                                         {format(new Date(log.createdAt), 'd MMM HH:mm', { locale: tr })}
                                     </span>

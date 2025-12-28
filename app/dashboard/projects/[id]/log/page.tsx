@@ -20,7 +20,7 @@ export default async function NewLogPage({ params }: { params: Promise<{ id: str
                 <p style={{ color: '#a0a0b8', fontSize: '0.875rem' }}>Projeye yeni bir gelişme notu ekleyin</p>
             </div>
 
-            <LogForm projectId={parseInt(id)} />
+            <LogForm projectId={id} />
         </div>
     );
 }

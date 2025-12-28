@@ -24,12 +24,12 @@ const Sidebar = () => {
 
     const links = [
         { href: '/', label: 'Dashboard', icon: LayoutDashboard, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
-        { href: '/projects', label: 'Projects', icon: Briefcase, gradient: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)' },
-        { href: '/calendar', label: 'Calendar', icon: CalendarDays, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
-        { href: '/services', label: 'Services', icon: Wrench, gradient: 'linear-gradient(135deg, #047857 0%, #065f46 100%)' },
-        { href: '/production', label: 'Production', icon: Factory, gradient: 'linear-gradient(135deg, #10b981 0%, #065f46 100%)' },
-        { href: '/glass-orders', label: 'Glass Orders', icon: RectangleCircle, gradient: 'linear-gradient(135deg, #34d399 0%, #064e3b 100%)' },
-        { href: '/financial-status', label: 'Mali Durum', icon: TrendingUp, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
+        { href: '/dashboard/projects', label: 'Projects', icon: Briefcase, gradient: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)' },
+        { href: '/dashboard/calendar', label: 'Calendar', icon: CalendarDays, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+        { href: '/dashboard/services', label: 'Services', icon: Wrench, gradient: 'linear-gradient(135deg, #047857 0%, #065f46 100%)' },
+        { href: '/dashboard/production', label: 'Production', icon: Factory, gradient: 'linear-gradient(135deg, #10b981 0%, #065f46 100%)' },
+        { href: '/dashboard/glass-orders', label: 'Glass Orders', icon: RectangleCircle, gradient: 'linear-gradient(135deg, #34d399 0%, #064e3b 100%)' },
+        { href: '/dashboard/financial-status', label: 'Mali Durum', icon: TrendingUp, gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
     ];
 
     return (

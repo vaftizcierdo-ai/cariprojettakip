@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const project = await getProjectById(parseInt(id));
+    const project = await getProjectById(id);
 
     if (!project) {
         return (
@@ -22,7 +22,7 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ marginBottom: '2rem' }}>
-                <Link href={`/projects/${id}`} style={{
+                <Link href={`/dashboard/projects/${id}`} style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.5rem',

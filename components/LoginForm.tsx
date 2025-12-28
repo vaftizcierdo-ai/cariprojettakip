@@ -1,58 +1,96 @@
+// components/LoginForm
+
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { login } from '@/actions/auth';
+import { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from '@/services/firebase/config';
 import { LogIn } from 'lucide-react';
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.875rem 1rem',
-                borderRadius: '0.875rem',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                color: 'white',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                border: 'none',
-                cursor: pending ? 'not-allowed' : 'pointer',
-                opacity: pending ? 0.7 : 1,
-                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
-                transition: 'all 0.3s ease'
-            }}
-        >
-            {pending ? (
-                <>
-                    <svg style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem', height: '1rem', width: '1rem' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Giriş Yapılıyor...
-                </>
-            ) : (
-                <>
-                    Giriş Yap
-                    <LogIn size={18} />
-                </>
-            )}
-        </button>
-    );
-}
+import { useRouter } from 'next/navigation'
 
 export default function LoginForm() {
-    const [state, formAction] = useActionState(login, null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter()
 
     const currentYear = new Date().getFullYear();
     const years = [currentYear - 1, currentYear, currentYear + 1];
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        console.log('LoginForm: handleSubmit triggered');
+        setError(null);
+        setLoading(true);
+
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get('username') as string;
+        const password = formData.get('password') as string;
+
+        try {
+            console.log('LoginForm: attempting signInWithEmailAndPassword', { email, password: password ? '***' : '' });
+            // 1️⃣ Firebase Auth
+            const cred = await signInWithEmailAndPassword(auth, email, password);
+            console.log('LoginForm: signIn successful', cred.user?.uid);
+            if (!cred.user) throw new Error('Auth başarısız');
+
+            // Sunucu tarafında __session cookie'si oluşturmak için idToken al ve POST et
+            try {
+                const idToken = await cred.user.getIdToken();
+                console.log('LoginForm: sending idToken to /api/auth/session');
+                const sessRes = await fetch('/api/auth/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken })
+                });
+                if (!sessRes.ok) {
+                    console.error('LoginForm: /api/auth/session failed', await sessRes.text());
+                    setError('Oturum oluşturulamadı');
+                    setLoading(false);
+                    return;
+                }
+                console.log('LoginForm: session cookie set');
+            } catch (sessionErr) {
+                console.error('LoginForm: session create error', sessionErr);
+                setError('Oturum oluşturulamadı');
+                setLoading(false);
+                return;
+            }
+
+            // 2️⃣ Firestore users kontrol
+            const q = query(
+                collection(db, 'users'),
+                where('email', '==', email)
+            );
+
+            const snap = await getDocs(q);
+            console.log('LoginForm: getDocs completed', { size: snap.size, empty: snap.empty });
+
+            if (snap.empty) {
+                throw new Error('Bu kullanıcı sistemde tanımlı değil');
+            }
+
+            // ✅ Dashboard'a yönlendir
+            console.log('LoginForm: navigating to /dashboard');
+            try {
+                router.replace('/dashboard');
+            } catch (navErr) {
+                console.error('LoginForm: router.replace error', navErr);
+                setError('Yönlendirme sırasında hata oluştu');
+            }
+
+        } catch (err: any) {
+            console.error('LoginForm: caught error', err);
+
+            if (err.code === 'auth/invalid-credential') {
+                setError('E-posta veya şifre hatalı');
+            } else {
+                setError(err.message || 'Giriş yapılamadı');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const inputStyle = {
         width: '100%',
@@ -61,9 +99,7 @@ export default function LoginForm() {
         border: '1px solid #2a2a3a',
         borderRadius: '0.875rem',
         color: '#e8e8f0',
-        fontSize: '0.875rem',
-        outline: 'none',
-        transition: 'all 0.3s ease'
+        fontSize: '0.875rem'
     };
 
     const labelStyle = {
@@ -75,95 +111,49 @@ export default function LoginForm() {
     };
 
     return (
-        <form action={formAction} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {state?.error && (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {error && (
                 <div style={{
                     padding: '1rem',
                     background: 'rgba(239, 68, 68, 0.1)',
                     color: '#f87171',
-                    fontSize: '0.875rem',
-                    borderRadius: '0.875rem',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem'
+                    borderRadius: '0.875rem'
                 }}>
-                    <svg style={{ width: '1.25rem', height: '1.25rem', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span style={{ fontWeight: 500 }}>{state.error}</span>
+                    {error}
                 </div>
             )}
 
             <div>
-                <label htmlFor="username" style={labelStyle}>
-                    Kullanıcı Adı
-                </label>
-                <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    required
-                    style={inputStyle}
-                    placeholder="Kullanıcı adınız"
-                />
+                <label style={labelStyle}>Kullanıcı Adı</label>
+                <input name="username" type="email" required style={inputStyle} />
             </div>
 
             <div>
-                <label htmlFor="password" style={labelStyle}>
-                    Şifre
-                </label>
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    style={inputStyle}
-                    placeholder="••••••"
-                />
+                <label style={labelStyle}>Şifre</label>
+                <input name="password" type="password" required style={inputStyle} />
             </div>
 
             <div>
-                <label htmlFor="year" style={labelStyle}>
-                    Çalışma Yılı
-                </label>
-                <select
-                    id="year"
-                    name="year"
-                    defaultValue={currentYear}
-                    style={{
-                        ...inputStyle,
-                        cursor: 'pointer',
-                        appearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 1rem center'
-                    }}
-                >
-                    {years.map(y => (
-                        <option key={y} value={y} style={{ background: '#16161f', color: '#e8e8f0' }}>{y}</option>
-                    ))}
+                <label style={labelStyle}>Çalışma Yılı</label>
+                <select name="year" defaultValue={currentYear} style={inputStyle}>
+                    {years.map(y => <option key={y}>{y}</option>)}
                 </select>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-                <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    style={{
-                        width: '1rem',
-                        height: '1rem',
-                        accentColor: '#10b981',
-                        cursor: 'pointer'
-                    }}
-                />
-                <label htmlFor="remember-me" style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#9ca3af', cursor: 'pointer' }}>
-                    Beni Hatırla
-                </label>
-            </div>
-
-            <SubmitButton />
+            <button
+                type="submit"
+                disabled={loading}
+                style={{
+                    padding: '0.875rem',
+                    borderRadius: '0.875rem',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    border: 'none',
+                    fontWeight: 600,
+                    cursor: loading ? 'not-allowed' : 'pointer'
+                }}
+            >
+                {loading ? 'Giriş Yapılıyor...' : <>Giriş Yap <LogIn size={18} /></>}
+            </button>
         </form>
     );
 }

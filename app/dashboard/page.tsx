@@ -1,3 +1,5 @@
+// app/dashboard/page
+
 import StatsCard from '@/components/StatsCard';
 import TodoList from '@/components/TodoList';
 import { getDashboardStats, getUpcomingProjects } from '@/services/dashboardService';
@@ -20,13 +22,47 @@ async function UpcomingDeliveriesSection() {
         {projects.map((project: any) => {
           const endDate = new Date(project.endDate);
           endDate.setHours(0, 0, 0, 0);
-          const isDelayed = endDate < today;
+          
+          const daysUntilDelivery = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const isDelayed = daysUntilDelivery < 0;
+          const isUrgent = daysUntilDelivery >= 0 && daysUntilDelivery <= 3;
+          const isWarning = daysUntilDelivery > 3 && daysUntilDelivery <= 7;
+
+          let bgColor = 'rgba(249, 115, 22, 0.1)';
+          let borderColor = '1px solid rgba(249, 115, 22, 0.3)';
+          let iconBg = 'rgba(249, 115, 22, 0.2)';
+          let iconColor = '#fb923c';
+          let textColor = '#fb923c';
+          let statusText = 'Teslim Tarihi';
+
+          if (isDelayed) {
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+            borderColor = '1px solid rgba(239, 68, 68, 0.3)';
+            iconBg = 'rgba(239, 68, 68, 0.2)';
+            iconColor = '#f87171';
+            textColor = '#f87171';
+            statusText = 'Gecikmiş Teslimat';
+          } else if (isUrgent) {
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+            borderColor = '1px solid rgba(239, 68, 68, 0.3)';
+            iconBg = 'rgba(239, 68, 68, 0.2)';
+            iconColor = '#f87171';
+            textColor = '#f87171';
+            statusText = 'Acil - 3 Gün İçinde';
+          } else if (isWarning) {
+            bgColor = 'rgba(249, 115, 22, 0.1)';
+            borderColor = '1px solid rgba(249, 115, 22, 0.3)';
+            iconBg = 'rgba(249, 115, 22, 0.2)';
+            iconColor = '#fb923c';
+            textColor = '#fb923c';
+            statusText = 'Uyarı - 1 Hafta İçinde';
+          }
 
           return (
-            <Link key={project.id} href={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+            <Link key={project.id} href={`/dashboard/projects/${project.id}`} style={{ textDecoration: 'none' }}>
               <div style={{
-                background: isDelayed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(249, 115, 22, 0.1)',
-                border: isDelayed ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(249, 115, 22, 0.3)',
+                background: bgColor,
+                border: borderColor,
                 borderRadius: '1rem',
                 padding: '1.25rem',
                 display: 'flex',
@@ -38,17 +74,17 @@ async function UpcomingDeliveriesSection() {
                   <div style={{
                     padding: '0.75rem',
                     borderRadius: '0.75rem',
-                    background: isDelayed ? 'rgba(239, 68, 68, 0.2)' : 'rgba(249, 115, 22, 0.2)',
-                    color: isDelayed ? '#f87171' : '#fb923c'
+                    background: iconBg,
+                    color: iconColor
                   }}>
-                    {isDelayed ? <AlertTriangle size={24} /> : <Clock size={24} />}
+                    {isDelayed || isUrgent ? <AlertTriangle size={24} /> : <Clock size={24} />}
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#e8e8f0', marginBottom: '0.25rem' }}>
-                      {project.description}
+                      {project.description || 'Proje'}
                     </h3>
                     <p style={{ fontSize: '0.875rem', color: '#a0a0b8' }}>
-                      {project.clientName || project.companyName}
+                      {project.clientName || project.companyName || '-'}
                     </p>
                   </div>
                 </div>
@@ -56,13 +92,13 @@ async function UpcomingDeliveriesSection() {
                   <p style={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: isDelayed ? '#f87171' : '#fb923c',
+                    color: textColor,
                     marginBottom: '0.25rem'
                   }}>
                     {format(endDate, 'd MMMM yyyy', { locale: tr })}
                   </p>
                   <p style={{ fontSize: '0.75rem', color: '#6b6b80' }}>
-                    {isDelayed ? 'Gecikmiş Teslimat' : 'Teslim Tarihi'}
+                    {statusText}
                   </p>
                 </div>
               </div>

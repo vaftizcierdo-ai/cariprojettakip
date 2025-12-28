@@ -4,7 +4,7 @@ import { deleteProject } from '@/app/actions/project';
 import { Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 
-export default function DeleteProjectButton({ id }: { id: number }) {
+export default function DeleteProjectButton({ id }: { id: string | number }) {
     const [isPending, startTransition] = useTransition();
     const [showConfirm, setShowConfirm] = useState(false);
 

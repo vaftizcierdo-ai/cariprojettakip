@@ -5,7 +5,7 @@ import { Check } from 'lucide-react';
 import { useTransition } from 'react';
 
 interface ProjectStatusToggleProps {
-    id: number;
+    id: string | number;
     status: string;
 }
 

@@ -1,11 +1,13 @@
 'use server';
 
-import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { admin } from '@/utils/firebaseAdmin';
+
+const firestore = admin.firestore();
 
 export async function addExpense(prevState: any, formData: FormData) {
-    const projectId = parseInt(formData.get('projectId') as string);
+    const projectId = String(formData.get('projectId') as string);
     const amount = parseFloat(formData.get('amount') as string);
     const date = formData.get('date') as string;
     const category = formData.get('category') as string;
@@ -16,21 +18,21 @@ export async function addExpense(prevState: any, formData: FormData) {
     }
 
     try {
-        await prisma.expense.create({
-            data: {
-                projectId,
-                amount,
-                date: new Date(date),
-                category,
-                description,
-            },
+        const docRef = firestore.collection('projects').doc(projectId).collection('expenses').doc();
+        await docRef.set({
+            amount,
+            date: admin.firestore.Timestamp.fromDate(new Date(date)),
+            category,
+            description: description || null,
+            createdAt: admin.firestore.Timestamp.now(),
         });
 
-        revalidatePath(`/projects/${projectId}`);
-        revalidatePath('/financial-status');
+        revalidatePath(`/dashboard/projects/${projectId}`);
+        revalidatePath('/dashboard/financial-status');
     } catch (error) {
+        console.error('addExpense error', error);
         return { error: 'Gider eklenirken hata oluştu.' };
     }
 
-    redirect(`/projects/${projectId}`);
+    redirect(`/dashboard/projects/${projectId}`);
 }

@@ -72,7 +72,7 @@ export default async function ProjectsPage({
                     </h1>
                     <p style={{ color: '#a0a0b8', fontSize: '0.875rem' }}>Proje portföyünü yönetin</p>
                 </div>
-                <Link href="/projects/new" style={{ textDecoration: 'none' }}>
+                <Link href="/dashboard/projects/new" style={{ textDecoration: 'none' }}>
                     <div className="btn-gradient" style={{
                         background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         color: 'white',
@@ -227,7 +227,7 @@ export default async function ProjectsPage({
                                             padding: '1.25rem 1.5rem',
                                             textAlign: 'right'
                                         }}>
-                                            <Link href={`/projects/${project.id}`} style={{
+                                            <Link href={`/dashboard/projects/${project.id}`} style={{
                                                 color: '#6b6b80',
                                                 transition: 'color 0.2s',
                                                 display: 'inline-block'

@@ -33,7 +33,7 @@ function SubmitButton() {
     );
 }
 
-export default function ExpenseForm({ projectId }: { projectId: number }) {
+export default function ExpenseForm({ projectId }: { projectId: string | number }) {
     const [state, formAction] = useActionState(addExpense, null);
 
     const inputStyle = {

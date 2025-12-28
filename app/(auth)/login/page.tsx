@@ -1,3 +1,5 @@
+//app/(auth)/login/page
+
 import LoginForm from '@/components/LoginForm';
 
 export default function LoginPage() {

@@ -4,7 +4,7 @@ import { deleteProductionJob } from '@/app/actions/production';
 import { Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 
-export default function DeleteProductionButton({ id }: { id: number }) {
+export default function DeleteProductionButton({ id }: { id: string | number }) {
     const [isPending, startTransition] = useTransition();
     const [showConfirm, setShowConfirm] = useState(false);
 

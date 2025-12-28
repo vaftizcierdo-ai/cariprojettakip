@@ -93,7 +93,7 @@ export default async function ProductionPage({
                     </h1>
                     <p style={{ color: '#a0a0b8', fontSize: '0.875rem' }}>Kategorize edilmiş üretim süreçleri</p>
                 </div>
-                <Link href="/production/new" style={{ textDecoration: 'none' }}>
+                <Link href="/dashboard/production/new" style={{ textDecoration: 'none' }}>
                     <div className="btn-gradient" style={{
                         background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         color: 'white',

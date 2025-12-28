@@ -1,8 +1,10 @@
 'use server';
 
-import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { admin } from '@/utils/firebaseAdmin';
+
+const firestore = admin.firestore();
 
 export async function createProject(prevState: any, formData: FormData) {
     const clientType = formData.get('clientType') as string;
@@ -25,37 +27,37 @@ export async function createProject(prevState: any, formData: FormData) {
     }
 
     try {
-        const project = await prisma.project.create({
-            data: {
-                clientType,
-                clientName: clientName || null,
-                companyName: companyName || null,
-                phone: phone || null,
-                email: email || null,
-                country: country || null,
-                city: city || null,
-                district: district || null,
-                description,
-                agreedPrice: isNaN(agreedPrice) ? 0 : agreedPrice,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                status: status || 'Open',
-            },
+        await firestore.collection('projects').add({
+            clientType,
+            clientName: clientName || null,
+            companyName: companyName || null,
+            phone: phone || null,
+            email: email || null,
+            country: country || null,
+            city: city || null,
+            district: district || null,
+            description,
+            agreedPrice: isNaN(agreedPrice) ? 0 : agreedPrice,
+            startDate: admin.firestore.Timestamp.fromDate(new Date(startDate)),
+            endDate: admin.firestore.Timestamp.fromDate(new Date(endDate)),
+            status: status || 'Open',
+            createdAt: admin.firestore.Timestamp.now(),
+            updatedAt: admin.firestore.Timestamp.now(),
         });
 
-        revalidatePath('/projects');
-        revalidatePath('/calendar');
+        revalidatePath('/dashboard/projects');
+        revalidatePath('/dashboard/calendar');
         revalidatePath('/'); // dashboard
     } catch (error) {
-        console.error(error);
+        console.error('createProject error', error);
         return { error: 'Proje oluşturulurken bir hata oluştu.' };
     }
 
-    redirect('/projects');
+    redirect('/dashboard/projects');
 }
 // ... existing imports
 
-export async function updateProject(id: number, prevState: any, formData: FormData) {
+export async function updateProject(id: string | number, prevState: any, formData: FormData) {
     const clientType = formData.get('clientType') as string;
     const clientName = formData.get('clientName') as string;
     const companyName = formData.get('companyName') as string;
@@ -76,33 +78,31 @@ export async function updateProject(id: number, prevState: any, formData: FormDa
     }
 
     try {
-        await prisma.project.update({
-            where: { id },
-            data: {
-                clientType,
-                clientName: clientName || null,
-                companyName: companyName || null,
-                phone: phone || null,
-                email: email || null,
-                country: country || null,
-                city: city || null,
-                district: district || null,
-                description,
-                agreedPrice: isNaN(agreedPrice) ? 0 : agreedPrice,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                status: status || 'Open',
-            },
+        await firestore.collection('projects').doc(String(id)).update({
+            clientType,
+            clientName: clientName || null,
+            companyName: companyName || null,
+            phone: phone || null,
+            email: email || null,
+            country: country || null,
+            city: city || null,
+            district: district || null,
+            description,
+            agreedPrice: isNaN(agreedPrice) ? 0 : agreedPrice,
+            startDate: admin.firestore.Timestamp.fromDate(new Date(startDate)),
+            endDate: admin.firestore.Timestamp.fromDate(new Date(endDate)),
+            status: status || 'Open',
+            updatedAt: admin.firestore.Timestamp.now(),
         });
 
-        revalidatePath(`/projects/${id}`);
-        revalidatePath('/projects');
-        revalidatePath('/calendar');
+        revalidatePath(`/dashboard/projects/${id}`);
+        revalidatePath('/dashboard/projects');
+        revalidatePath('/dashboard/calendar');
         revalidatePath('/'); // dashboard
     } catch (error) {
-        console.error(error);
+        console.error('updateProject error', error);
         return { error: 'Proje güncellenirken bir hata oluştu.' };
     }
 
-    redirect(`/projects/${id}`);
+    redirect(`/dashboard/projects/${id}`);
 }

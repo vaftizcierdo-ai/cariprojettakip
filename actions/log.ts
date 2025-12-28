@@ -1,11 +1,13 @@
 'use server';
 
-import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { admin } from '@/utils/firebaseAdmin';
+
+const firestore = admin.firestore();
 
 export async function addLog(prevState: any, formData: FormData) {
-    const projectId = parseInt(formData.get('projectId') as string);
+    const projectId = String(formData.get('projectId') as string);
     const content = formData.get('content') as string;
 
     if (!content) {
@@ -13,25 +15,21 @@ export async function addLog(prevState: any, formData: FormData) {
     }
 
     try {
-        await prisma.projectLog.create({
-            data: {
-                projectId,
-                content,
-            },
+        await firestore.collection('projects').doc(projectId).collection('logs').add({
+            content,
+            createdAt: admin.firestore.Timestamp.now(),
         });
 
-        // Auto update project updated_at? Prisma handles @updatedAt if field modified.
-        // Adding log doesn't modify project row unless we touch it.
-        // We might want to touch project.updatedAt?
-        await prisma.project.update({
-            where: { id: projectId },
-            data: { updatedAt: new Date() }
+        // Update project updatedAt timestamp
+        await firestore.collection('projects').doc(projectId).update({
+            updatedAt: admin.firestore.Timestamp.now()
         });
 
-        revalidatePath(`/projects/${projectId}`);
+        revalidatePath(`/dashboard/projects/${projectId}`);
     } catch (error) {
+        console.error('addLog error', error);
         return { error: 'Log eklenirken hata oluştu.' };
     }
 
-    redirect(`/projects/${projectId}`);
+    redirect(`/dashboard/projects/${projectId}`);
 }

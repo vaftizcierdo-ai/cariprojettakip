@@ -5,7 +5,7 @@ import { Check } from 'lucide-react';
 import { useTransition } from 'react';
 
 interface GlassOrderToggleProps {
-    id: number;
+    id: string | number;
     completed: boolean;
 }
 

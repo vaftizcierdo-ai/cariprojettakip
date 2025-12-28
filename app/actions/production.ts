@@ -1,12 +1,17 @@
 'use server';
 
-import { prisma } from '@/lib/db';
+import { admin } from '@/utils/firebaseAdmin';
 import { revalidatePath } from 'next/cache';
 
-export async function deleteProductionJob(id: number) {
-    await prisma.productionJob.delete({
-        where: { id }
-    });
+const firestore = admin.firestore();
 
-    revalidatePath('/production');
+export async function deleteProductionJob(id: string | number) {
+    try {
+        const docId = String(id);
+        await firestore.collection('productionJobs').doc(docId).delete();
+
+        revalidatePath('/dashboard/production');
+    } catch (error) {
+        console.error('deleteProductionJob error', error);
+    }
 }

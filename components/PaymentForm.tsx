@@ -33,7 +33,7 @@ function SubmitButton() {
     );
 }
 
-export default function PaymentForm({ projectId }: { projectId: number }) {
+export default function PaymentForm({ projectId }: { projectId: string | number }) {
     const [state, formAction] = useActionState(addPayment, null);
 
     const inputStyle = {

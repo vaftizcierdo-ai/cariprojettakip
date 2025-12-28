@@ -20,7 +20,7 @@ export default async function NewPaymentPage({ params }: { params: Promise<{ id:
                 <p style={{ color: '#a0a0b8', fontSize: '0.875rem' }}>Bu proje için yeni bir ödeme kaydedin</p>
             </div>
 
-            <PaymentForm projectId={parseInt(id)} />
+            <PaymentForm projectId={id} />
         </div>
     );
 }

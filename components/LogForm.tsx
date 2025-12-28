@@ -33,7 +33,7 @@ function SubmitButton() {
     );
 }
 
-export default function LogForm({ projectId }: { projectId: number }) {
+export default function LogForm({ projectId }: { projectId: string | number }) {
     const [state, formAction] = useActionState(addLog, null);
 
     const textareaStyle = {

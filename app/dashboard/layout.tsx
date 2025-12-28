@@ -1,3 +1,5 @@
+// app/dashboard/layout
+
 import Sidebar from '@/components/Sidebar';
 import TopNav from '@/components/TopNav';
 

@@ -1,79 +1,115 @@
-import { prisma } from '@/lib/db';
+import { admin } from '@/utils/firebaseAdmin';
+import { Timestamp } from 'firebase-admin/firestore';
+
+const firestore = admin.firestore();
 
 export async function getDashboardStats(year: number) {
-    // Define date range for the year if needed, or just filter by startDate?
-    // Request says: "Working Year (Dropdown – seçilen yıl bütün verileri filtrelemede kullanılacak)"
-    // So we filter projects starting or active in that year.
-    // For simplicity, let's assume we filter by startDate year.
+    try {
+        const startOfYear = new Date(year, 0, 1);
+        const endOfYear = new Date(year + 1, 0, 1);
 
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year + 1, 0, 1);
+        // Get total projects for the year
+        const totalProjectsSnapshot = await firestore
+            .collection('projects')
+            .where('startDate', '>=', Timestamp.fromDate(startOfYear))
+            .where('startDate', '<', Timestamp.fromDate(endOfYear))
+            .get();
 
-    const totalProjects = await prisma.project.count({
-        where: {
-            startDate: {
-                gte: startOfYear,
-                lt: endOfYear,
-            },
-        },
-    });
+        const totalProjects = totalProjectsSnapshot.size;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-    const delayedProjects = await prisma.project.count({
-        where: {
-            endDate: {
-                lt: today
-            },
-            status: {
-                not: 'Completed'
-            }
-        },
-    });
+        // Get delayed projects - simpler query without composite index
+        const delayedProjectsSnapshot = await firestore
+            .collection('projects')
+            .where('status', '!=', 'Completed')
+            .get();
 
-    const openServices = await prisma.serviceRequest.count({
-        where: {
-            status: { not: 'Solved' },
-        },
-    });
+        const delayedProjects = delayedProjectsSnapshot.docs.filter(doc => {
+            const data = doc.data();
+            const endDate = data.endDate?.toDate?.() || new Date(data.endDate);
+            return new Date(endDate) < today;
+        }).length;
 
-    const productionJobs = await prisma.productionJob.count({
-        where: {
-            status: { in: ['Waiting', 'InProduction'] },
-        },
-    });
+        // Get open service requests
+        const openServicesSnapshot = await firestore
+            .collection('serviceRequests')
+            .where('status', '!=', 'Solved')
+            .get()
+            .catch(() => firestore.collection('serviceRequests').get());
 
-    return {
-        totalProjects,
-        delayedProjects, // or overdueProjects
-        openServices,
-        productionJobs,
-    };
+        const openServices = openServicesSnapshot.docs.filter((doc: any) => {
+            return doc.data().status !== 'Solved';
+        }).length;
+
+        // Get pending production jobs - handle in clause limitation
+        const productionJobsSnapshot = await firestore
+            .collection('productionJobs')
+            .get();
+
+        const productionJobs = productionJobsSnapshot.docs.filter((doc: any) => {
+            const status = doc.data().status;
+            return status === 'Waiting' || status === 'InProduction';
+        }).length;
+
+        return {
+            totalProjects,
+            delayedProjects,
+            openServices,
+            productionJobs,
+        };
+    } catch (error) {
+        console.error('Error in getDashboardStats:', error);
+        return {
+            totalProjects: 0,
+            delayedProjects: 0,
+            openServices: 0,
+            productionJobs: 0,
+        };
+    }
 }
 
 export async function getUpcomingProjects() {
-    const today = new Date();
-    // Reset time to start of day for comparison
-    today.setHours(0, 0, 0, 0);
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-    const threeDaysLater = new Date(today);
-    threeDaysLater.setDate(today.getDate() + 3);
+        const thirtyDaysLater = new Date(today);
+        thirtyDaysLater.setDate(today.getDate() + 30);
 
-    const projects = await prisma.project.findMany({
-        where: {
-            status: {
-                not: 'Completed'
-            },
-            endDate: {
-                lte: threeDaysLater
-            }
-        },
-        orderBy: {
-            endDate: 'asc'
-        },
-        take: 5 // Limit to 5 for dashboard display? Or show all? User didn't specify limit, but usually dashboard has limits. Let's show all for now as user said "birden fazla proje varsa".
-    });
+        // Get all non-completed projects for this year
+        const projectsSnapshot = await firestore
+            .collection('projects')
+            .where('status', '!=', 'Completed')
+            .get();
 
-    return projects;
+        const projects = projectsSnapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                const endDate = data.endDate?.toDate?.() || new Date(data.endDate);
+                return {
+                    id: doc.id,
+                    ...data,
+                    endDate,
+                };
+            })
+            .filter((p: any) => {
+                const endDate = new Date(p.endDate);
+                endDate.setHours(0, 0, 0, 0);
+                // Include projects that end today or within next 30 days, or are already delayed
+                return endDate <= thirtyDaysLater;
+            })
+            .sort((a: any, b: any) => {
+                const aDate = new Date(a.endDate);
+                const bDate = new Date(b.endDate);
+                return aDate.getTime() - bDate.getTime();
+            })
+            .slice(0, 5);
+
+        return projects;
+    } catch (error) {
+        console.error('Error in getUpcomingProjects:', error);
+        return [];
+    }
 }

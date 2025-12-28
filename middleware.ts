@@ -1,34 +1,38 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+// Note: middleware runs on the Edge runtime and cannot import Node-only
+// libraries like `firebase-admin`. Verify tokens on a server (API route)
+// that runs on Node. Here we only check cookie presence and redirect.
 
-export function middleware(request: NextRequest) {
-    const session = request.cookies.get('session');
+const protectedPaths = ['/dashboard'];
 
-    // Define public paths
-    const publicPaths = ['/login', '/services/public']; // maybe public service tracking later?
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
 
-    const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  const isProtected = protectedPaths.some((path) =>
+    pathname.startsWith(path)
+  );
 
-    if (!session && !isPublicPath) {
-        return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    if (session && request.nextUrl.pathname === '/login') {
-        return NextResponse.redirect(new URL('/', request.url));
-    }
-
+  if (!isProtected) {
     return NextResponse.next();
+  }
+
+  // Client'tan gelen ID token veya oturum cookie'sinin varlığını kontrol et
+  const idToken = request.cookies.get('__session')?.value;
+
+  if (!idToken) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
+
+  // NOT: Token doğrulamasını burada yapmıyoruz çünkü `firebase-admin`
+  // Edge'de çalışmaz. Doğrulamayı `/api/auth/verify` gibi Node tabanlı
+  // bir API route içinde yap; middleware sadece varlık kontrolü sağlar.
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
-    ],
+  matcher: ['/dashboard/:path*'],
 };
