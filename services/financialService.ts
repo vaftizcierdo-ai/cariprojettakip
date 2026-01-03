@@ -1,7 +1,18 @@
 import { admin } from '@/utils/firebaseAdmin';
 import { Timestamp } from 'firebase-admin/firestore';
 
+
+
 const firestore = admin.firestore();
+
+
+type FinancialSnapshot = {
+    year: number;
+    summary: any;
+    monthlyData: any[];
+    projectProfitability: any[];
+    updatedAt: FirebaseFirestore.Timestamp;
+};
 
 export async function getFinancialSummary(year: number) {
     try {
@@ -185,4 +196,46 @@ export async function getProjectProfitability(year: number) {
         console.error('Error in getProjectProfitability:', error);
         return [];
     }
+}
+
+export async function getFinancialSnapshot(year: number): Promise<FinancialSnapshot | null> {
+    const ref = firestore.collection('financialSnapshots').doc(String(year));
+    const doc = await ref.get();
+    if (!doc.exists) return null;
+    return doc.data() as FinancialSnapshot;
+}
+
+export async function saveFinancialSnapshot(year: number, data: Omit<FinancialSnapshot, 'updatedAt' | 'year'>) {
+    const ref = firestore.collection('financialSnapshots').doc(String(year));
+    await ref.set(
+        {
+            year,
+            ...data,
+            updatedAt: admin.firestore.Timestamp.now(),
+        },
+        { merge: true }
+    );
+}
+
+/**
+ * ✅ Önce snapshot varsa onu döner.
+ * Yoksa hesaplar, kaydeder, döner.
+ */
+export async function getOrCreateFinancialSnapshot(year: number) {
+    const cached = await getFinancialSnapshot(year);
+    if (cached) return cached;
+
+    const summary = await getFinancialSummary(year);
+    const monthlyData = await getMonthlyBreakdown(year);
+    const projectProfitability = await getProjectProfitability(year);
+
+    await saveFinancialSnapshot(year, { summary, monthlyData, projectProfitability });
+
+    return {
+        year,
+        summary,
+        monthlyData,
+        projectProfitability,
+        updatedAt: admin.firestore.Timestamp.now(),
+    };
 }

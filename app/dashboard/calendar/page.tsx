@@ -106,27 +106,7 @@ export default function CalendarPage() {
                         }}>
                             Takvim
                         </h1>
-                        <button
-                            onClick={() => setSelectionMode(!selectionMode)}
-                            style={{
-                                background: selectionMode ? 'rgba(239, 68, 68, 0.8)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
-                                padding: '0.625rem 1.25rem',
-                                borderRadius: '0.75rem',
-                                border: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.813rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
-                                transition: 'all 0.3s ease'
-                            }}
-                        >
-                            <Plus size={18} />
-                            {selectionMode ? 'İptal' : 'Gün Tanımla'}
-                        </button>
+                
                     </div>
 
                     {/* Month/Year Selector */}

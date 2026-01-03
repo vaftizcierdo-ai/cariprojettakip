@@ -19,7 +19,7 @@ export default function HelperToolsModal({ isOpen, onClose }: HelperToolsModalPr
             name: 'Kumaş Çizimi',
             icon: Scissors,
             gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            href: '/tools/fabric-drawing'
+            href: '/dashboard/tools/fabric-drawing'
         },
         {
             id: 'calculator',

@@ -106,3 +106,61 @@ export async function updateProject(id: string | number, prevState: any, formDat
 
     redirect(`/dashboard/projects/${id}`);
 }
+
+async function deleteCollectionDocs(ref: FirebaseFirestore.Query | FirebaseFirestore.CollectionReference) {
+    const snap = await ref.get();
+    if (snap.empty) return;
+
+    let batch = firestore.batch();
+    let count = 0;
+
+    for (const d of snap.docs) {
+        batch.delete(d.ref);
+        count++;
+
+        if (count >= 450) {
+            await batch.commit();
+            batch = firestore.batch();
+            count = 0;
+        }
+    }
+
+    if (count > 0) await batch.commit();
+}
+
+export async function deleteProject(id: string | number) {
+    const projectId = String(id);
+
+    try {
+        const projectRef = firestore.collection('projects').doc(projectId);
+
+        // 1) Root collection’larda projectId ile bağlı olanları SİL
+        await Promise.all([
+            deleteCollectionDocs(firestore.collection('glassOrders').where('projectId', '==', projectId)),
+            deleteCollectionDocs(firestore.collection('productionJobs').where('projectId', '==', projectId)),
+            deleteCollectionDocs(firestore.collection('serviceRequests').where('projectId', '==', projectId)),
+        ]);
+
+        // 2) Project altı subcollection’lar (varsa) -> SİL
+        const subcollections = ['payments', 'logs', 'expenses', 'services', 'production', 'glassOrders'] as const;
+
+        for (const sub of subcollections) {
+            await deleteCollectionDocs(projectRef.collection(sub));
+        }
+
+        // 3) Projeyi sil
+        await projectRef.delete();
+
+        // 4) Revalidate (ilgili sayfalar güncellensin)
+        revalidatePath('/dashboard/projects');
+        revalidatePath('/dashboard/glass-orders');
+        revalidatePath('/dashboard/production');
+        revalidatePath('/dashboard/services');
+        revalidatePath('/dashboard/calendar');
+        revalidatePath('/'); // dashboard
+    } catch (error) {
+        console.error('deleteProject error', error);
+    }
+
+    redirect('/dashboard/projects');
+}

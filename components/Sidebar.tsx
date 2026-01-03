@@ -33,21 +33,29 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside style={{
-            width: '220px',
-            height: '100vh',
-            background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)',
-            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            zIndex: 20,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: '1rem',
-            gap: '0.5rem'
-        }}>
+        <aside
+            style={{
+                width: '220px',
+                height: '100vh',
+                background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)',
+                borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                zIndex: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                paddingTop: '1rem',
+                gap: '0.5rem',
+
+                // ✅ SCROLL
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                scrollbarGutter: 'stable', // opsiyonel (layout zıplamasın)
+            }}
+        >
+
             {links.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));

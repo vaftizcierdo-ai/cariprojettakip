@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createServiceRequest } from '@/actions/service';
 import { Save } from 'lucide-react';
@@ -24,7 +24,7 @@ function SubmitButton() {
                 fontSize: '0.875rem',
                 cursor: pending ? 'not-allowed' : 'pointer',
                 boxShadow: '0 4px 20px rgba(4, 120, 87, 0.4)',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
             }}
         >
             <Save size={20} />
@@ -36,7 +36,13 @@ function SubmitButton() {
 export default function ServiceForm({ projects }: { projects: any[] }) {
     const [state, formAction] = useActionState(createServiceRequest, null);
 
-    const inputStyle = {
+    const [isOther, setIsOther] = useState(false);
+
+    useEffect(() => {
+        // form submit sonrası state dönse bile UI tutarlı kalsın diye (optional)
+    }, [state]);
+
+    const inputStyle: React.CSSProperties = {
         width: '100%',
         padding: '0.75rem 1rem',
         background: 'rgba(255, 255, 255, 0.05)',
@@ -45,66 +51,81 @@ export default function ServiceForm({ projects }: { projects: any[] }) {
         color: '#e8e8f0',
         fontSize: '0.875rem',
         outline: 'none',
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
     };
 
-    const labelStyle = {
+    const labelStyle: React.CSSProperties = {
         display: 'block',
         fontSize: '0.813rem',
         fontWeight: 500,
         color: '#a0a0b8',
-        marginBottom: '0.5rem'
+        marginBottom: '0.5rem',
     };
 
     return (
-        <form action={formAction} style={{
-            background: 'rgba(30, 30, 46, 0.6)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '1.5rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            padding: '2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2rem'
-        }}>
+        <form
+            action={formAction}
+            style={{
+                background: 'rgba(30, 30, 46, 0.6)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '1.5rem',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                padding: '2rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2rem',
+            }}
+        >
             {state?.error && (
-                <div style={{
-                    padding: '1rem',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: '0.75rem',
-                    color: '#f87171',
-                    fontSize: '0.875rem'
-                }}>
+                <div
+                    style={{
+                        padding: '1rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '0.75rem',
+                        color: '#f87171',
+                        fontSize: '0.875rem',
+                    }}
+                >
                     {state.error}
                 </div>
             )}
 
+            {/* ✅ isOther flag (server action okuyacak) */}
+            <input type="hidden" name="isOtherProject" value={isOther ? '1' : '0'} />
+
             <div>
-                <h3 style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    color: '#e8e8f0',
-                    marginBottom: '1.5rem',
-                    paddingBottom: '0.75rem',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
+                <h3
+                    style={{
+                        fontSize: '1.125rem',
+                        fontWeight: 700,
+                        color: '#e8e8f0',
+                        marginBottom: '1.5rem',
+                        paddingBottom: '0.75rem',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                >
                     Servis Talebi Detayları
                 </h3>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '1.5rem'
-                }}>
+
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                        gap: '1.5rem',
+                    }}
+                >
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={labelStyle}>İlgili Proje *</label>
+
                         <select
                             name="projectId"
-                            required
-                            style={{
-                                ...inputStyle,
-                                cursor: 'pointer'
+                            required={!isOther}
+                            style={{ ...inputStyle, cursor: 'pointer' }}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setIsOther(v === '__OTHER__');
                             }}
                             onFocus={(e) => {
                                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
@@ -115,14 +136,64 @@ export default function ServiceForm({ projects }: { projects: any[] }) {
                                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                             }}
                         >
-                            <option value="" style={{ background: '#1a1a2a' }}>Proje Seçiniz</option>
-                            {projects.map(p => (
+                            {/* ✅ Diğer en üstte */}
+                            <option value="__OTHER__" style={{ background: '#1a1a2a' }}>
+                                Diğer (Elle Gireceğim)
+                            </option>
+
+                            <option value="" style={{ background: '#1a1a2a' }}>
+                                Proje Seçiniz
+                            </option>
+
+                            {projects.map((p) => (
                                 <option key={p.id} value={p.id} style={{ background: '#1a1a2a' }}>
                                     {p.description || `Project #${p.id}`} - {p.clientName || p.companyName}
                                 </option>
                             ))}
                         </select>
                     </div>
+
+                    {/* ✅ Diğer seçilince açılan alanlar */}
+                    {isOther && (
+                        <>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label style={labelStyle}>Proje Adı *</label>
+                                <input
+                                    type="text"
+                                    name="customProjectName"
+                                    required
+                                    placeholder="Örn: Villa Cam Değişimi"
+                                    style={inputStyle}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                        e.currentTarget.style.borderColor = 'rgba(250, 112, 154, 0.5)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label style={labelStyle}>Müşteri Adı (Opsiyonel)</label>
+                                <input
+                                    type="text"
+                                    name="customClientName"
+                                    placeholder="Örn: Ahmet Yılmaz"
+                                    style={inputStyle}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                        e.currentTarget.style.borderColor = 'rgba(250, 112, 154, 0.5)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                    }}
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <div>
                         <label style={labelStyle}>Şikayet Tarihi *</label>
@@ -147,10 +218,7 @@ export default function ServiceForm({ projects }: { projects: any[] }) {
                         <label style={labelStyle}>Durum</label>
                         <select
                             name="status"
-                            style={{
-                                ...inputStyle,
-                                cursor: 'pointer'
-                            }}
+                            style={{ ...inputStyle, cursor: 'pointer' }}
                             onFocus={(e) => {
                                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
                                 e.currentTarget.style.borderColor = 'rgba(250, 112, 154, 0.5)';
@@ -160,9 +228,15 @@ export default function ServiceForm({ projects }: { projects: any[] }) {
                                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                             }}
                         >
-                            <option value="Open" style={{ background: '#1a1a2a' }}>Açık</option>
-                            <option value="InProgress" style={{ background: '#1a1a2a' }}>İşlemde</option>
-                            <option value="Solved" style={{ background: '#1a1a2a' }}>Çözüldü</option>
+                            <option value="Open" style={{ background: '#1a1a2a' }}>
+                                Açık
+                            </option>
+                            <option value="InProgress" style={{ background: '#1a1a2a' }}>
+                                İşlemde
+                            </option>
+                            <option value="Solved" style={{ background: '#1a1a2a' }}>
+                                Çözüldü
+                            </option>
                         </select>
                     </div>
 
@@ -173,11 +247,7 @@ export default function ServiceForm({ projects }: { projects: any[] }) {
                             rows={4}
                             required
                             placeholder="Şikayet veya talep detaylarını giriniz..."
-                            style={{
-                                ...inputStyle,
-                                resize: 'vertical',
-                                fontFamily: 'inherit'
-                            }}
+                            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
                             onFocus={(e) => {
                                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
                                 e.currentTarget.style.borderColor = 'rgba(250, 112, 154, 0.5)';

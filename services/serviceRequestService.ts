@@ -12,48 +12,67 @@ export async function getServiceRequests(status?: string, search?: string) {
         }
 
         const snapshot = await query.orderBy('createdAt', 'desc').get();
-        
-        const services = await Promise.all(snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
-            const data = doc.data();
-            let project = null;
 
-            // Fetch project data if projectId exists
-            if (data.projectId) {
-                try {
-                    const projectDoc = await firestore.collection('projects').doc(String(data.projectId)).get();
-                    if (projectDoc.exists) {
-                        const projectData = projectDoc.data();
-                        project = {
-                            id: projectDoc.id,
-                            description: projectData?.description || null,
-                            clientName: projectData?.clientName || null,
-                            companyName: projectData?.companyName || null,
-                        };
+        const services = await Promise.all(
+            snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
+                const data = doc.data() as any;
+                let project: any = null;
+
+                if (data.projectId) {
+                    try {
+                        const projectDoc = await firestore.collection('projects').doc(String(data.projectId)).get();
+                        if (projectDoc.exists) {
+                            const projectData = projectDoc.data() as any;
+                            project = {
+                                id: projectDoc.id,
+                                description: projectData?.description || null,
+                                clientName: projectData?.clientName || null,
+                                companyName: projectData?.companyName || null,
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error fetching project:', error);
                     }
-                } catch (error) {
-                    console.error('Error fetching project:', error);
                 }
-            }
 
-            return {
-                id: doc.id,
-                description: data.description,
-                complaintDate: data.complaintDate?.toDate?.() || new Date(data.complaintDate),
-                status: data.status,
-                resolutionDate: data.resolutionDate?.toDate?.() || null,
-                projectId: data.projectId,
-                project,
-                createdAt: data.createdAt?.toDate?.() || new Date(),
-            };
-        }));
+                return {
+                    id: doc.id,
 
-        // Client-side filtering for search
+                    description: data.description || '',
+                    complaintDate: data.complaintDate?.toDate?.() || (data.complaintDate ? new Date(data.complaintDate) : new Date()),
+                    status: data.status || 'Open',
+                    resolutionDate: data.resolutionDate?.toDate?.() || null,
+
+                    projectId: data.projectId ?? null,
+                    project,
+
+                    // ✅ DİĞER alanları (EKSİKSE görünmez)
+                    customProjectName: data.customProjectName ?? null,
+                    customClientName: data.customClientName ?? null,
+
+                    createdAt: data.createdAt?.toDate?.() || new Date(),
+                    updatedAt: data.updatedAt?.toDate?.() || new Date(),
+                };
+            })
+        );
+
         if (search) {
-            return services.filter(service =>
-                service.description?.toLowerCase().includes(search.toLowerCase()) ||
-                service.project?.description?.toLowerCase().includes(search.toLowerCase()) ||
-                service.project?.clientName?.toLowerCase().includes(search.toLowerCase())
-            );
+            const q = search.toLowerCase();
+            return services.filter((s) => {
+                const hay = [
+                    s.description,
+                    s.project?.description,
+                    s.project?.clientName,
+                    s.project?.companyName,
+                    s.customProjectName,
+                    s.customClientName,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+
+                return hay.includes(q);
+            });
         }
 
         return services;
