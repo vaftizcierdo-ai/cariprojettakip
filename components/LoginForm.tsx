@@ -124,7 +124,7 @@ export default function LoginForm() {
             )}
 
             <div>
-                <label style={labelStyle}>Kullanıcı Adı</label>
+                <label style={labelStyle}>Kullanıcı Adınız</label>
                 <input name="username" type="email" required style={inputStyle} />
             </div>
 
